@@ -1,4 +1,5 @@
 defmodule ExMon.Game.Actions.Attack do
+  alias ExMon.Game.Status
   alias ExMon.Game
 
   @move_avg_power 18..25 # ataque avg varia de 18 a 25
@@ -6,12 +7,13 @@ defmodule ExMon.Game.Actions.Attack do
 
   def attack_opponent(opponent, move) do
     damage = calculate_power(move)
+
     # Recuperando a vida do oponente
     opponent
     |> Game.fetch_player()
     |> Map.get(:life)
     |> calculate_total_life(damage)
-    |> update_opponent_life(opponent)
+    |> update_opponent_life(opponent, damage)
   end
 
   defp calculate_power(:move_avg), do: Enum.random(@move_avg_power)
@@ -22,9 +24,18 @@ defmodule ExMon.Game.Actions.Attack do
   defp calculate_total_life(life, damage), do: life - damage
 
   # Função que atualiza a vida do oponente no estado do jogo
-  defp update_opponent_life(life, opponent) do
+  defp update_opponent_life(life, opponent, damage) do
     opponent
-    |>Game.fetch_player()
-    |>Map.put(:life, life)
+    |> Game.fetch_player()
+    |> Map.put(:life, life)
+    |> update_game(opponent, damage)
+  end
+
+  defp update_game(player, opponent, damage) do
+    Game.info()
+    |> Map.put(opponent, player)
+    |> Game.update()
+
+    Status.print_wrong_move_message(opponent, :attack, damage)
   end
 end
